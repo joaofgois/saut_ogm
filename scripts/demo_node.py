@@ -6,7 +6,7 @@ from sensor_msgs.msg import LaserScan
 from math import floor
 
 import numpy as np
-
+#teste
 
 # Import your custom code to implement your algorithm logic here
 # for example:
