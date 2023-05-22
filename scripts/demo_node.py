@@ -16,7 +16,11 @@ class Map:
         self.xsize = xsize
         self.ysize = ysize
         self.grid_size = grid_size
+        self.alpha_norm = grid_size/grid_size  #largura desejada / gridsize
         self.log_odds_map = np.zeros((self.xsize, self.ysize))
+        self.l_free = np.log(0.1/0.9)
+        self.l_occ = np.log(0.9/0.1)
+
 
     def update_cell(self, x, y, value):
         self.log_odds_map[x, y] += value
@@ -95,12 +99,11 @@ class DemoNode:
         # Do something here at a fixed rate
         rospy.loginfo('Timer callback called at: %s', rospy.get_time())
 
-
         # Perform some logic with the sensor data received
         for i in range(360):
-            dist = self.scan_sensor.ranges[i]
-            norm_dist = dist/self.map.grid_size
-            if dist < self.scan_sensor.range_min:
+            scan_dist = self.scan_sensor.ranges[i]
+            norm_dist = scan_dist/self.map.grid_size
+            if scan_dist < self.scan_sensor.range_min:
                 continue
             ray = 0.0
             ray_dir = self.pose[2] + self.scan_sensor.angle_increment * i
@@ -108,8 +111,9 @@ class DemoNode:
                 ray_dir -= 2*np.pi
             xa = self.pose[0]
             ya = self.pose[1]
-            xf = xa + norm_dist*np.cos(ray_dir)
-            yf = ya + norm_dist*np.sin(ray_dir)
+            dist = 0
+            xf = xa + (norm_dist + self.map.alpha_norm/2)*np.cos(ray_dir)
+            yf = ya + (norm_dist + self.map.alpha_norm/2)*np.sin(ray_dir)
             a = (yf-ya)/(xf-xa)
             b= yf/(a*xf)
             if np.cos(ray_dir) > 0: xi = 1
@@ -117,9 +121,10 @@ class DemoNode:
             if np.sin(ray_dir) > 0: yi = 1
             else : yi = 0
             
-            while floor(xa) != floor(xf) and floor(ya) != floor(yf):
-                #aplicar o InverseSensorModel()
-
+            tracing = True
+            while tracing:
+                if floor(xa) != floor(xf) and floor(ya) != floor(yf):
+                    tracing = False
                 #intercepcao linha vertical
                 xiv = floor(xa) + xi
                 yiv = a*xiv+b
@@ -132,16 +137,30 @@ class DemoNode:
                 if distv > disth:
                     xa = xih
                     ya = yih
+                    dist = dist + disth
+                    if xi == 0: xi = -1
+                    if yi == -1: yi = 0
                 else:
                     xa = xiv
                     ya = yiv
+                    dist = dist + distv
+                    if yi == 0: yi = -1
+                    if xi == -1: xi = 0
 
-                #excecao se for a 1 vez e se o sentido for negativo
-                if xi == 0: xi = -1
-                if yi == 0: yi = -1
-                
+                #aplicar o InverseSensorModel()
+                if xi < 1: xa_prev = int(xa)
+                else: xa_prev = int(xa-1)
+                if yi < 1: ya_prev = int(ya)
+                else: ya_prev = int(ya-1)
 
+                self.InvSenModel(norm_dist, dist, xa_prev, ya_prev)
 
+    def InvSenModel(self, scan_dist, dist, x, y):
+        if dist < 3.5/self.map.grid_size:
+            if dist < scan_dist - self.map.alpha_norm/2:
+                self.log_odds_map[x,y] += self.map.l_free
+            else:
+                self.log_odds_map[x,y] += self.map.l_occ
 
 
     def callback_scan(self, msg):

@@ -1,2 +1,2 @@
-# saut-ogm
+# saut_ogm
 occupancy grid mapping
