@@ -74,14 +74,6 @@ class DemoNode:
         # Subscribe to the topic '/fake_sensor_topic'
         self.sub_scan= rospy.Subscriber('/scan', LaserScan, self.callback_scan)
 
-    #def initialize_publishers(self):
-    #    """
-    #    You should/can initialize the publishers for the results of your algorithm here.
-    #    """
-    #
-    #    # Initialize the publisher to the topic '/output_topic'
-    #    self.pub_demo_topic = rospy.Publisher('/output_topic', Odometry, queue_size=10)
-
     def initialize_timer(self):
         """
         Here we create a timer to trigger the callback function at a fixed rate.
