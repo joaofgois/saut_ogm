@@ -2,6 +2,7 @@
 
 import rospy
 from sensor_msgs.msg import LaserScan
+from geometry_msgs.msg import PoseWithCovarianceStamped
 #from nav_msgs.msg import Odometry
 from math import floor
 
@@ -26,7 +27,7 @@ class Map:
         self.log_odds_map[x, y] += value
 
 
-class DemoNode:
+class OGM_Node:
     def __init__(self):
 
         # Initialize some necessary variables here
@@ -73,6 +74,7 @@ class DemoNode:
 
         # Subscribe to the topic '/fake_sensor_topic'
         self.sub_scan= rospy.Subscriber('/scan', LaserScan, self.callback_scan)
+        self.pose = rospy.Subscriber('/amcl_pose', PoseWithCovarianceStamped, self.callback_pose)
 
     def initialize_timer(self):
         """
@@ -97,62 +99,73 @@ class DemoNode:
             norm_dist = scan_dist/self.map.grid_size
             if scan_dist < self.scan_sensor.range_min:
                 continue
-            ray = 0.0
             ray_dir = self.pose[2] + self.scan_sensor.angle_increment * i
+            
             if ray_dir > 2*np.pi:
                 ray_dir -= 2*np.pi
             xa = self.pose[0]
             ya = self.pose[1]
+            x_versor = np.cos(ray_dir)
+            y_versor = np.sin(ray_dir)
             dist = 0
-            xf = xa + (norm_dist + self.map.alpha_norm/2)*np.cos(ray_dir)
-            yf = ya + (norm_dist + self.map.alpha_norm/2)*np.sin(ray_dir)
-            a = (yf-ya)/(xf-xa)
-            b= yf/(a*xf)
-            if np.cos(ray_dir) > 0: xi = 1
+            xf = xa + (norm_dist + self.map.alpha_norm/2)*x_versor
+            yf = ya + (norm_dist + self.map.alpha_norm/2)*y_versor
+
+            if x_versor > 0: xi = 1
             else : xi = 0
-            if np.sin(ray_dir) > 0: yi = 1
+            if y_versor > 0: yi = 1
             else : yi = 0
-            
+
             tracing = True
             while tracing:
-                if floor(xa) != floor(xf) and floor(ya) != floor(yf):
-                    tracing = False
+                x_prev = xa
+                y_prev = ya
+                dist_prev = dist
                 #intercepcao linha vertical
-                xiv = floor(xa) + xi
-                yiv = a*xiv+b
-                distv = np.sqrt((yiv-ya)**2 + (xiv-xa)**2)
+                xiv = floor(xa)
+                xiv += xi
+                k_v = (xiv-xa)/x_versor
+                yiv = k_v*y_versor + ya
                 #intercepcao linha horizontal
-                yih = floor(xa) + yi
-                xih = (yih-b)/a
-                disth = np.sqrt((yih-ya)**2 + (xih-xa)**2)
+                yih = floor(ya) + yi
+                k_h = (yih-ya)/y_versor
+                xih = k_h*x_versor + xa
                 #decidir qual a celula seguinte
-                if distv > disth:
+                if k_h < k_v:
+                    #Intersecao Horizontal
                     xa = xih
                     ya = yih
-                    dist = dist + disth
-                    if xi == 0: xi = -1
-                    if yi == -1: yi = 0
+                    dist = dist + k_h
+                    if xi == -1: xi = 0
+                    if yi == 0: yi = -1
                 else:
+                    #Intersecao Vertical
                     xa = xiv
                     ya = yiv
-                    dist = dist + distv
-                    if yi == 0: yi = -1
-                    if xi == -1: xi = 0
+                    dist = dist + k_v
+                    if yi == -1: yi = 0
+                    if xi == 0: xi = -1
 
-                #aplicar o InverseSensorModel()
-                if xi < 1: xa_prev = int(xa)
-                else: xa_prev = int(xa-1)
-                if yi < 1: ya_prev = int(ya)
-                else: ya_prev = int(ya-1)
+                #InvSenModel(norm_dist, dist, xa_prev, ya_prev)
+                x_med = (xa+x_prev)/2
+                y_med = (ya+y_prev)/2
 
-                self.InvSenModel(norm_dist, dist, xa_prev, ya_prev)
+                self.InvSenModel(dist_prev, dist, x_med, y_med, norm_dist)
+                
+                if floor(xf) == floor(x_med) and floor(yf) == floor(y_med):
+                    tracing = False
 
-    def InvSenModel(self, scan_dist, dist, x, y):
-        if dist < 3.5/self.map.grid_size:
-            if dist < scan_dist - self.map.alpha_norm/2:
-                self.log_odds_map[x,y] += self.map.l_free
-            else:
-                self.log_odds_map[x,y] += self.map.l_occ
+    def InvSenModel(self, dist_prev, dist, x_med, y_med, norm_dist):
+        if dist < norm_dist-self.map.alpha_norm/2:
+            #vazio
+            self.log_odds_map[floor(x_med),floor(y_med)] += self.map.l_free
+            return
+        elif dist < norm_dist+self.map.alpha_norm/2 or dist_prev < norm_dist+self.map.alpha_norm/2:
+            #dentro da parede
+            self.log_odds_map[floor(x_med),floor(y_med)] += self.map.l_occ
+            return
+        else:
+            return
 
 
     def callback_scan(self, msg):
@@ -164,17 +177,24 @@ class DemoNode:
         """
 
         # Do something with the message received
-        rospy.loginfo('Received data: %s', msg.data)
+        rospy.loginfo('Received data: %s', msg)
 
         # Store the sensor message to be processed later (or process now depending on the application)
-        self.scan_sensor = msg.data
-        
+        self.scan_sensor = msg
+
+    def callback_pose(self,msg):
+         
+         
+        rospy.loginfo('Received data: %s', msg)
+        self.pose = msg
+        #self.pose.pose.orientation.z
+        #self.pose.pose.position.x/y/z
 
 
 def main():
 
     # Create an instance of the DemoNode class
-    demo_node = DemoNode()
+    demo_node = OGM_Node()
 
     # Spin to keep the script for exiting
     rospy.spin()
