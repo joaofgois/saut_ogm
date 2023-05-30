@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import (AutoMinorLocator, MultipleLocator)
@@ -26,7 +27,7 @@ norm_dist = 7
 alpha_norm = 1
 
 ray = 0.0
-ray_dir = pose[2] + np.pi/2#(np.pi/2-0.0001/2)
+ray_dir = pose[2] + 2*np.pi/3#(np.pi/2-0.0001/2)
 if ray_dir > 2*np.pi:
     ray_dir -= 2*np.pi
 xa = pose[0]
@@ -65,6 +66,8 @@ if x_versor > 0: xi = 1
 else : xi = 0
 if y_versor > 0: yi = 1
 else : yi = 0
+
+tempo = time.time()
 
 tracing = True
 while tracing:
@@ -111,6 +114,7 @@ while tracing:
 
 
 
+print((tempo - time.time()))
     
 ax.plot(xfmenosalfa, yfmenosalfa, marker="o", markersize=4, markeredgecolor="green", markerfacecolor="green")
 ax.plot(xf, yf, marker="o", markersize=4, markeredgecolor="green", markerfacecolor="green")

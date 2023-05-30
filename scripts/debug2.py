@@ -80,5 +80,3 @@ while tracing:
     
     if floor(xf) == floor(x_med) and floor(yf) == floor(y_med):
         tracing = False
-
-

@@ -5,6 +5,8 @@ from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import PoseWithCovarianceStamped
 #from nav_msgs.msg import Odometry
 from math import floor
+import matplotlib.pyplot as plt
+
 
 import numpy as np
 #teste
@@ -32,16 +34,18 @@ class OGM_Node:
 
         # Initialize some necessary variables here
         self.node_frequency = None
-        self.sub_scan = None
 
         #initialize the map
         #each tile with 10cm
         #
-        grid_size = 0.1 
-        self.map = Map(int(30/grid_size), int(30/grid_size), grid_size)
+        grid_size = 0.5 
+        self.map = Map(int(70/grid_size), int(70/grid_size), grid_size)
         
         # Store the data received from a scan sensor
-        self.scan_sensor = 0.0
+        self.scan_sensor = LaserScan()
+        self.scan_sensor.angle_increment = 2*np.pi/360
+        self.scan_sensor.ranges = [0.0]*360
+
         self.pose = [0.0, 0.0, 0.0]
         
         # Initialize the ROS node
@@ -73,8 +77,8 @@ class OGM_Node:
         """
 
         # Subscribe to the topic '/fake_sensor_topic'
-        self.sub_scan= rospy.Subscriber('/scan', LaserScan, self.callback_scan)
-        self.pose = rospy.Subscriber('/amcl_pose', PoseWithCovarianceStamped, self.callback_pose)
+        rospy.Subscriber('/scan', LaserScan, self.callback_scan)
+        rospy.Subscriber('/amcl_pose', PoseWithCovarianceStamped, self.callback_pose)
 
     def initialize_timer(self):
         """
@@ -95,14 +99,15 @@ class OGM_Node:
 
         # Perform some logic with the sensor data received
         for i in range(360):
+
             scan_dist = self.scan_sensor.ranges[i]
-            norm_dist = scan_dist/self.map.grid_size
             if scan_dist < self.scan_sensor.range_min:
                 continue
+            norm_dist = scan_dist/self.map.grid_size
             ray_dir = self.pose[2] + self.scan_sensor.angle_increment * i
             
-            if ray_dir > 2*np.pi:
-                ray_dir -= 2*np.pi
+            #if ray_dir > 2*np.pi:
+            #    ray_dir -= 2*np.pi
             xa = self.pose[0]
             ya = self.pose[1]
             x_versor = np.cos(ray_dir)
@@ -146,23 +151,23 @@ class OGM_Node:
                     if yi == -1: yi = 0
                     if xi == 0: xi = -1
 
-                #InvSenModel(norm_dist, dist, xa_prev, ya_prev)
                 x_med = (xa+x_prev)/2
                 y_med = (ya+y_prev)/2
 
+                #InvSenModel(norm_dist, dist, xa_prev, ya_prev)
                 self.InvSenModel(dist_prev, dist, x_med, y_med, norm_dist)
                 
-                if floor(xf) == floor(x_med) and floor(yf) == floor(y_med):
+                if (floor(xf) == floor(x_med) and floor(yf) == floor(y_med)) or dist_prev > 3.5:
                     tracing = False
 
     def InvSenModel(self, dist_prev, dist, x_med, y_med, norm_dist):
         if dist < norm_dist-self.map.alpha_norm/2:
             #vazio
-            self.log_odds_map[floor(x_med),floor(y_med)] += self.map.l_free
+            self.map.log_odds_map[floor(x_med),floor(y_med)] += self.map.l_free
             return
         elif dist < norm_dist+self.map.alpha_norm/2 or dist_prev < norm_dist+self.map.alpha_norm/2:
             #dentro da parede
-            self.log_odds_map[floor(x_med),floor(y_med)] += self.map.l_occ
+            self.map.log_odds_map[floor(x_med),floor(y_med)] += self.map.l_occ
             return
         else:
             return
@@ -177,27 +182,34 @@ class OGM_Node:
         """
 
         # Do something with the message received
-        rospy.loginfo('Received data: %s', msg)
+        #rospy.loginfo('Received data: %s', msg)
 
         # Store the sensor message to be processed later (or process now depending on the application)
         self.scan_sensor = msg
 
-    def callback_pose(self,msg):
+    def callback_pose(self,msg):         
          
-         
-        rospy.loginfo('Received data: %s', msg)
-        self.pose = msg
-        #self.pose.pose.orientation.z
+        #rospy.loginfo('Received data: %s', msg)
+        self.pose[0] = msg.pose.pose.position.x/self.map.grid_size + int(self.map.xsize/2)
+        self.pose[1] = msg.pose.pose.position.y/self.map.grid_size + int(self.map.ysize/2) 
+        self.pose[2] = 2*np.arcsin(msg.pose.pose.orientation.z)
         #self.pose.pose.position.x/y/z
 
 
 def main():
 
     # Create an instance of the DemoNode class
-    demo_node = OGM_Node()
+    node = OGM_Node()
+
 
     # Spin to keep the script for exiting
     rospy.spin()
+
+    print(node.map.log_odds_map)
+    plt.clf()
+    plt.imshow(node.map.log_odds_map, 'Greys') # log probabilities
+    #plt.imshow(1.0 - 1./(1.+np.exp(node.map.log_odds_map)), 'Greys') #Probability
+    plt.show()
 
 if __name__ == '__main__':
     main()
