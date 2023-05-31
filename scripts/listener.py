@@ -2,6 +2,8 @@
 import rospy
 from std_msgs.msg import String
 from sensor_msgs.msg import LaserScan
+from geometry_msgs.msg import PoseWithCovarianceStamped
+
 
 
 
@@ -22,7 +24,8 @@ def listener():
 
     rospy.Subscriber("chatter", String, callback_chatter)
 
-    rospy.Subscriber("scan", LaserScan, callback_scan)
+    rospy.Subscriber("amcl_pose", LaserScan, callback_scan)
+
 
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
