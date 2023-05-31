@@ -22,7 +22,7 @@ mapa = np.zeros((20, 20))
 
 pose = [10.5, 10.5, 0]
 
-norm_dist = 7
+norm_dist = 6.65
 
 alpha_norm = 1
 
