@@ -209,10 +209,10 @@ def main():
     rospy.spin()
 
     print(node.map.log_odds_map)
-    plt.clf()
-    plt.figure(200)
-    plt.imshow(node.map.log_odds_map, 'Greys') # log probabilities
-    plt.figure(300)
+    plt.figure('Log-Odds Map')
+    c = plt.imshow(node.map.log_odds_map, 'Greens') # log probabilities
+    plt.colorbar(c)
+    plt.figure('Probabilities Map')
     plt.imshow(1.0 - 1./(1.+np.exp(node.map.log_odds_map)), 'Greys') #Probability
     plt.show()
 
