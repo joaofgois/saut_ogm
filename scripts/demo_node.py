@@ -38,7 +38,7 @@ class OGM_Node:
         #initialize the map
         #each tile with 10cm
         #
-        grid_size = 0.01
+        grid_size = 0.05
         self.map = Map(int(60/grid_size), int(60/grid_size), grid_size)
         
         # Store the data received from a scan sensor
