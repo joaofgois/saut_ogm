@@ -6,7 +6,6 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 #from nav_msgs.msg import Odometry
 from math import floor
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 
 
 import numpy as np
@@ -212,7 +211,7 @@ def main():
 
     print(node.map.log_odds_map)
     plt.figure('Log-Odds Map')
-    c = plt.imshow(node.map.log_odds_map, mpl.colormaps['viridis']) # log probabilities
+    c = plt.imshow(node.map.log_odds_map, 'Greys') # log probabilities
     plt.colorbar(c)
     plt.figure('Probabilities Map')
     plt.imshow(1.0 - 1./(1.+np.exp(node.map.log_odds_map)), 'Greys') #Probability
