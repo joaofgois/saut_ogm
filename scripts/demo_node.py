@@ -210,9 +210,9 @@ def main():
 
     print(node.map.log_odds_map)
     plt.clf()
-    plt.subplot(211)
+    plt.figure(200)
     plt.imshow(node.map.log_odds_map, 'Greys') # log probabilities
-    plt.subplot(212)
+    plt.figure(300)
     plt.imshow(1.0 - 1./(1.+np.exp(node.map.log_odds_map)), 'Greys') #Probability
     plt.show()
 
