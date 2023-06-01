@@ -46,6 +46,7 @@ class OGM_Node:
         self.scan_sensor = LaserScan()
         self.scan_sensor.angle_increment = 2*np.pi/360
         self.scan_sensor.ranges = [0.0]*360
+        self.scan_sensor.range_min = 0.12
 
         self.pose = [0.0, 0.0, 0.0]
         
