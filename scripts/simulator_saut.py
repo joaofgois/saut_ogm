@@ -11,6 +11,8 @@ GRID_SIZE = 1 # gridsize do mapa de input (em metros)
 # Define the dimensions of the screen
 SCREEN_WIDTH = 700 #pixels
 SCREEN_HEIGHT = 700 #pixels
+ROBOT_SIZE = 15 #pixels
+ROBOT_HITBOX = 15 #pixels, tamanho real do robo (para calcular colisoes), pode ser diferente de ROBOT_SIZE
 FPS = 10
 
 #posicao inicial
@@ -194,9 +196,13 @@ while running:
                 ranges[i] = dist_prev*GRID_SIZE
                 tracing = False
                 pygame.draw.line(screen, (0,255,0), pos*PIXEL_SIZE, (x_prev*GRID_SIZE*PIXEL_SIZE,y_prev*GRID_SIZE*PIXEL_SIZE), 1)
+                if ranges[i] < ROBOT_HITBOX/PIXEL_SIZE:
+                    #robot has hit the wall
+                    vl = 0
+                    
 
-    pygame.draw.circle(screen, (255,0,0), pos*PIXEL_SIZE, 15)
-    pygame.draw.line(screen, (0,0,255), pos*PIXEL_SIZE, (pos*PIXEL_SIZE + dir*15), 2)
+    pygame.draw.circle(screen, (255,0,0), pos*PIXEL_SIZE, ROBOT_SIZE)
+    pygame.draw.line(screen, (0,0,255), pos*PIXEL_SIZE, (pos*PIXEL_SIZE + dir*ROBOT_SIZE), 2)
     # Update the display
     display_surface = pygame.display.get_surface()
     display_surface.blit(pygame.transform.flip(display_surface, False, True), dest=(0, 0))
