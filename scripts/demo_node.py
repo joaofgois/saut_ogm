@@ -38,13 +38,14 @@ class OGM_Node:
         #initialize the map
         #each tile with 10cm
         #
-        grid_size = 0.5 
-        self.map = Map(int(70/grid_size), int(70/grid_size), grid_size)
+        grid_size = 0.05
+        self.map = Map(int(60/grid_size), int(60/grid_size), grid_size)
         
         # Store the data received from a scan sensor
         self.scan_sensor = LaserScan()
         self.scan_sensor.angle_increment = 2*np.pi/360
         self.scan_sensor.ranges = [0.0]*360
+        self.scan_sensor.range_min = 0.12
 
         self.pose = [0.0, 0.0, 0.0]
         
@@ -84,10 +85,10 @@ class OGM_Node:
         """
         Here we create a timer to trigger the callback function at a fixed rate.
         """
-        self.timer = rospy.Timer(rospy.Duration(1.0 / self.node_frequency), self.timer_callback)
-        self.h_timerActivate = True
+        #self.timer = rospy.Timer(rospy.Duration(1.0 / self.node_frequency), self.timer_callback)
+        #self.h_timerActivate = True
 
-    def timer_callback(self, timer):
+    def timer_callback(self):
         """Here you should invoke methods to perform the logic computations of your algorithm.
         Note, the timer object is not used here, but it is passed as an argument to the callback by default.
         This callback is called at a fixed rate as defined in the initialization of the timer.
@@ -157,7 +158,7 @@ class OGM_Node:
                 #InvSenModel(norm_dist, dist, xa_prev, ya_prev)
                 self.InvSenModel(dist_prev, dist, x_med, y_med, norm_dist)
                 
-                if (floor(xf) == floor(x_med) and floor(yf) == floor(y_med)) or dist_prev > 3.5:
+                if (floor(xf) == floor(x_med) and floor(yf) == floor(y_med)) or dist_prev > 3.5/self.map.grid_size:
                     tracing = False
 
     def InvSenModel(self, dist_prev, dist, x_med, y_med, norm_dist):
@@ -195,6 +196,9 @@ class OGM_Node:
         self.pose[2] = 2*np.arcsin(msg.pose.pose.orientation.z)
         #self.pose.pose.position.x/y/z
 
+        #-------------------------------
+        self.timer_callback()
+
 
 def main():
 
@@ -206,9 +210,11 @@ def main():
     rospy.spin()
 
     print(node.map.log_odds_map)
-    plt.clf()
-    plt.imshow(node.map.log_odds_map, 'Greys') # log probabilities
-    #plt.imshow(1.0 - 1./(1.+np.exp(node.map.log_odds_map)), 'Greys') #Probability
+    plt.figure('Log-Odds Map')
+    c = plt.imshow(node.map.log_odds_map, 'Greys') # log probabilities
+    plt.colorbar(c)
+    plt.figure('Probabilities Map')
+    plt.imshow(1.0 - 1./(1.+np.exp(node.map.log_odds_map)), 'Greys') #Probability
     plt.show()
 
 if __name__ == '__main__':

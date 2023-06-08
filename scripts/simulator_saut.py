@@ -2,11 +2,14 @@ import pygame
 import numpy as np
 from math import floor
 from PIL import Image  #para instalar correr: pip install Pillow
+import rospy
+from sensor_msgs.msg import LaserScan
+from geometry_msgs.msg import PoseWithCovarianceStamped
 
 
 #------------------ USER INPUT ----------------------------------------------------------------
-MAP_FILE = 'image2.png'
-GRID_SIZE = 1 # gridsize do mapa de input (em metros)
+MAP_FILE = '/home/jgois/saut/src/test_pkg/scripts/image2.png'
+GRID_SIZE = 0.2 # gridsize do mapa de input (em metros)
 
 # Define the dimensions of the screen
 SCREEN_WIDTH = 700 #pixels
@@ -16,11 +19,11 @@ ROBOT_HITBOX = 15 #pixels, tamanho real do robo (para calcular colisoes), pode s
 FPS = 10
 
 #posicao inicial
-INITIAL_POSITION = [26.1, 26.1]  # x, y -> nao ponham valores inteiros (em metros)
+INITIAL_POSITION = [2.1, 5.1]  # x, y -> nao ponham valores inteiros (em metros)
 INIT_ANGLE = np.pi/2  # pi = np.pi
 
 #velocidades
-VEL_LIN = 1  # velocidade minima linear (metros/s)
+VEL_LIN = 0.1  # velocidade minima linear (metros/s)
 NR_VEL_L = 7 # numero de velocidades para vel. linear (maior numero implica mais top speed)
 VEL_ANG = np.pi/12  # velocidade minima angular (rad/s)
 NR_VEL_A = 3 # numero de velocidades para vel. angular (maior numero implica mais top speed)
@@ -71,13 +74,23 @@ delay = int(1/rate *1000)
 
 
 #SENSOR DATA
-ranges = [0.0]*360
+pub_scan = rospy.Publisher('scan', LaserScan, queue_size=10)
+pub_pose = rospy.Publisher('amcl_pose', PoseWithCovarianceStamped, queue_size=10)
+rospy.init_node('simulated_robot', anonymous=False)
+scan_sensor = LaserScan()
+scan_sensor.ranges = [0.0]*360
 angle_increment = 2*np.pi/360
+scan_sensor.angle_increment = angle_increment
+scan_sensor.range_min = 0.13
 rot_lidar = np.zeros((2,2))
 rot_lidar[0,0] = np.cos(angle_increment)
 rot_lidar[0,1] = -np.sin(angle_increment)
 rot_lidar[1,0] = np.sin(angle_increment)
 rot_lidar[1,1] = np.cos(angle_increment)
+position = PoseWithCovarianceStamped()
+#self.pose[0] = msg.pose.pose.position.x/self.map.grid_size + int(self.map.xsize/2)
+#        self.pose[1] = msg.pose.pose.position.y/self.map.grid_size + int(self.map.ysize/2) 
+#        self.pose[2] = 2*np.arcsin(msg.pose.pose.orientation.z)
 
 # Initialize Pygame
 pygame.init()
@@ -129,6 +142,9 @@ while running:
     rot[1,0] = np.sin(omega)
     rot[1,1] = np.cos(omega)
     dir = rot.dot(dir)
+    position.pose.pose.position.x = pos[0]
+    position.pose.pose.position.y = pos[1]
+    position.pose.pose.orientation.z = np.sin(np.arctan2(dir[1],dir[0])/2)
     # pygame.draw.circle(screen, (255,0,0), pos*PIXEL_SIZE, 20)
     # pygame.draw.line(screen, (0,0,255), pos*PIXEL_SIZE, (pos*PIXEL_SIZE + dir*20), 2)
 
@@ -193,13 +209,16 @@ while running:
             y_med = (ya+y_prev)/2
 
             if map[int(y_med),int(x_med)] == 0:
-                ranges[i] = dist_prev*GRID_SIZE
+                scan_sensor.ranges[i] = dist_prev*GRID_SIZE
                 tracing = False
                 pygame.draw.line(screen, (0,255,0), pos*PIXEL_SIZE, (x_prev*GRID_SIZE*PIXEL_SIZE,y_prev*GRID_SIZE*PIXEL_SIZE), 1)
-                if ranges[i] < ROBOT_HITBOX/PIXEL_SIZE:
+                if scan_sensor.ranges[i] < ROBOT_HITBOX/PIXEL_SIZE:
                     #robot has hit the wall
                     vl = 0
                     
+    #publish topics to ros master
+    pub_scan.publish(scan_sensor)
+    pub_pose.publish(position)
 
     pygame.draw.circle(screen, (255,0,0), pos*PIXEL_SIZE, ROBOT_SIZE)
     pygame.draw.line(screen, (0,0,255), pos*PIXEL_SIZE, (pos*PIXEL_SIZE + dir*ROBOT_SIZE), 2)
