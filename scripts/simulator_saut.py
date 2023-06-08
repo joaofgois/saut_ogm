@@ -26,9 +26,9 @@ VEL_ANG = np.pi/12  # velocidade minima angular (rad/s)
 NR_VEL_A = 3 # numero de velocidades para vel. angular (maior numero implica mais top speed)
 
 #------------------ CONTROLOS ----------------------------------------------------------------
-#   w- aumenta vel linear (3 velocidades)
+#   w- aumenta vel linear
 #   s- diminui vel linear
-#   a- aumenta vel angular para a esquerda (3 velocidades)
+#   a- aumenta vel angular para a esquerda
 #   d- aumenta vel angular para a direita
 #   ESPAÇO- para tudo
 #----------------------------------------------------------------------------------------------
