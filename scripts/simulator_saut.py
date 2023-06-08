@@ -1,9 +1,38 @@
 import pygame
 import numpy as np
 from math import floor
-from PIL import Image
+from PIL import Image  #para instalar correr: pip install Pillow
 
-image = Image.open('image2.png')
+
+#------------------ USER INPUT ----------------------------------------------------------------
+MAP_FILE = 'image2.png'
+GRID_SIZE = 1 # gridsize do mapa de input (em metros)
+
+# Define the dimensions of the screen
+SCREEN_WIDTH = 700 #pixels
+SCREEN_HEIGHT = 700 #pixels
+FPS = 10
+
+#posicao inicial
+INITIAL_POSITION = [26.1, 26.1]  # x, y -> nao ponham valores inteiros (em metros)
+INIT_ANGLE = np.pi/2  # pi = np.pi
+
+#velocidades
+VEL_LIN = 1  # velocidade minima linear (metros/s)
+NR_VEL_L = 7 # numero de velocidades para vel. linear (maior numero implica mais top speed)
+VEL_ANG = np.pi/12  # velocidade minima angular (rad/s)
+NR_VEL_A = 3 # numero de velocidades para vel. angular (maior numero implica mais top speed)
+
+#------------------ CONTROLOS ----------------------------------------------------------------
+#   w- aumenta vel linear (3 velocidades)
+#   s- diminui vel linear
+#   a- aumenta vel angular para a esquerda (3 velocidades)
+#   d- aumenta vel angular para a direita
+#   ESPAÇO- para tudo
+#----------------------------------------------------------------------------------------------
+
+
+image = Image.open(MAP_FILE)
 # Convert the image to grayscale
 image = image.convert('L')
 # Convert the image to a 2D NumPy array
@@ -14,12 +43,8 @@ width = array.shape[1]
 height = array.shape[0]
 print(array)
 map = array
-# map = np.flip(array, 0)
 
 
-# Define the dimensions of the screen
-SCREEN_WIDTH = 700
-SCREEN_HEIGHT = 700
 
 # Define the dimensions of the array
 ARRAY_COLS = array.shape[1]
@@ -28,18 +53,17 @@ ARRAY_ROWS = array.shape[0]
 CELL_WIDTH = SCREEN_WIDTH // ARRAY_COLS
 CELL_HEIGHT = SCREEN_HEIGHT // ARRAY_ROWS
 
-GRID_SIZE = 1 #metros
 PIXEL_SIZE = CELL_HEIGHT / GRID_SIZE #pixel/metro
 
 #posicoes em metros 
-pos = np.array([26.1, 25.1])
-dir = np.array([0.0, 1.0])
+pos = np.array(INITIAL_POSITION)
+dir = np.array([np.cos(INIT_ANGLE), np.sin(INIT_ANGLE)])
 vl = 1
 va = 0
-min_omega = np.pi/12
+min_omega = VEL_ANG
 omega = 0
 rot = np.zeros((2,2))
-rate = 10
+rate = FPS
 delta = 1/rate
 delay = int(1/rate *1000)
 
@@ -67,13 +91,13 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_a:
-            if va < 3:
+            if va < NR_VEL_A:
                 va += 1            
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_d:
-            if va > -3:
+            if va > -NR_VEL_A:
                 va -= 1
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_w:
-            if vl < 3:
+            if vl < NR_VEL_L:
                 vl += 1
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_s:
             if vl > 0:
@@ -96,7 +120,7 @@ while running:
 
 
     #draw position
-    pos += delta*vl*dir
+    pos += delta*(vl*VEL_LIN)*dir
     omega = delta*va*min_omega
     rot[0,0] = np.cos(omega)
     rot[0,1] = -np.sin(omega)
