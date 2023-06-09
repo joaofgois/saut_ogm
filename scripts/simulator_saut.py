@@ -11,15 +11,16 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 MAP_FILE = '/home/jgois/saut/src/test_pkg/scripts/image2.png'
 GRID_SIZE = 0.2 # gridsize do mapa de input (em metros)
 
-# Define the dimensions of the screen
+# DISPLAY SETTINGS
 SCREEN_WIDTH = 700 #pixels
 SCREEN_HEIGHT = 700 #pixels
 ROBOT_SIZE = 15 #pixels
 ROBOT_HITBOX = 15 #pixels, tamanho real do robo (para calcular colisoes), pode ser diferente de ROBOT_SIZE
 FPS = 10
+DISPLAY_RAYS = False # mostrar raios do ray tracing
 
 #posicao inicial
-INITIAL_POSITION = [2.1, 5.1]  # x, y -> nao ponham valores inteiros (em metros)
+INITIAL_POSITION = [2, 2]  # x, y (em metros)
 INIT_ANGLE = np.pi/2  # pi = np.pi
 
 #velocidades
@@ -55,12 +56,15 @@ map = array
 ARRAY_COLS = array.shape[1]
 ARRAY_ROWS = array.shape[0]
 # Calculate the size of each cell in the array
-CELL_WIDTH = SCREEN_WIDTH // ARRAY_COLS
-CELL_HEIGHT = SCREEN_HEIGHT // ARRAY_ROWS
+CELL_WIDTH = SCREEN_WIDTH / ARRAY_COLS
+CELL_HEIGHT = SCREEN_HEIGHT / ARRAY_ROWS
 
 PIXEL_SIZE = CELL_HEIGHT / GRID_SIZE #pixel/metro
 
 #posicoes em metros 
+INITIAL_POSITION[0] += 0.001
+INITIAL_POSITION[1] += 0.001
+print(INITIAL_POSITION)
 pos = np.array(INITIAL_POSITION)
 dir = np.array([np.cos(INIT_ANGLE), np.sin(INIT_ANGLE)])
 vl = 1
@@ -95,7 +99,8 @@ position = PoseWithCovarianceStamped()
 # Initialize Pygame
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-clock = pygame.time.Clock()
+bg = pygame.image.load(MAP_FILE)
+bg = pygame.transform.scale(bg, (700, 700))
 
 # Game loop
 running = True
@@ -125,14 +130,14 @@ while running:
     screen.fill((255, 255, 255))
 
     # Draw the array
-    for row in range(ARRAY_ROWS):
-        for col in range(ARRAY_COLS):
-            # Calculate the position of the current cell
-            x = col * CELL_WIDTH
-            y = row * CELL_HEIGHT
-            # Draw a rectangle for the cell
-            pygame.draw.rect(screen, (array[row,col],array[row,col],array[row,col]), (x, y, CELL_WIDTH, CELL_HEIGHT))
-
+    # for row in range(ARRAY_ROWS):
+    #     for col in range(ARRAY_COLS):
+    #         # Calculate the position of the current cell
+    #         x = col * CELL_WIDTH
+    #         y = row * CELL_HEIGHT
+    #         # Draw a rectangle for the cell
+    #         pygame.draw.rect(screen, (array[row,col],array[row,col],array[row,col]), (x, y, CELL_WIDTH, CELL_HEIGHT))
+    screen.blit(bg, (0, 0))
 
     #draw position
     pos += delta*(vl*VEL_LIN)*dir
@@ -211,7 +216,8 @@ while running:
             if map[int(y_med),int(x_med)] == 0:
                 scan_sensor.ranges[i] = dist_prev*GRID_SIZE
                 tracing = False
-                pygame.draw.line(screen, (0,255,0), pos*PIXEL_SIZE, (x_prev*GRID_SIZE*PIXEL_SIZE,y_prev*GRID_SIZE*PIXEL_SIZE), 1)
+                if DISPLAY_RAYS:
+                    pygame.draw.line(screen, (0,255,0), pos*PIXEL_SIZE, (x_prev*GRID_SIZE*PIXEL_SIZE,y_prev*GRID_SIZE*PIXEL_SIZE), 1)
                 if scan_sensor.ranges[i] < ROBOT_HITBOX/PIXEL_SIZE:
                     #robot has hit the wall
                     vl = 0
