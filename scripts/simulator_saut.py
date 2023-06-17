@@ -8,8 +8,8 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 
 
 #------------------ USER INPUT ----------------------------------------------------------------
-MAP_FILE = '/home/jgois/saut/src/test_pkg/scripts/image2.png'
-GRID_SIZE = 0.2 # gridsize do mapa de input (em metros)
+MAP_FILE = '/home/jgois/saut/src/test_pkg/scripts/image4.png'
+GRID_SIZE = 0.1 # gridsize do mapa de input (em metros)
 
 # DISPLAY SETTINGS
 SCREEN_WIDTH = 700 #pixels
@@ -17,14 +17,23 @@ SCREEN_HEIGHT = 700 #pixels
 ROBOT_SIZE = 15 #pixels
 ROBOT_HITBOX = 15 #pixels, tamanho real do robo (para calcular colisoes), pode ser diferente de ROBOT_SIZE
 FPS = 10
-DISPLAY_RAYS = False # mostrar raios do ray tracing
+DISPLAY_RAYS = True # mostrar raios do ray tracing
 
 #posicao inicial
-INITIAL_POSITION = [2, 2]  # x, y (em metros)
+INITIAL_POSITION = [3, 5]  # x, y (em metros)
 INIT_ANGLE = np.pi/2  # pi = np.pi
 
+
+#NOISE
+# 68% of the observations lie within 1 standard deviation of the mean;
+# 95% lie within two standard deviation of the mean;
+# 99.9% lie within 3 standard deviations of the mean
+SCAN_NOISE = 0.05  # percentagem 
+POSE_NOISE = 0.05  # metros
+ANG_NOISE = 0.05 # percentagem
+
 #velocidades
-VEL_LIN = 0.1  # velocidade minima linear (metros/s)
+VEL_LIN = 0.3  # velocidade minima linear (metros/s)
 NR_VEL_L = 7 # numero de velocidades para vel. linear (maior numero implica mais top speed)
 VEL_ANG = np.pi/12  # velocidade minima angular (rad/s)
 NR_VEL_A = 3 # numero de velocidades para vel. angular (maior numero implica mais top speed)
@@ -147,9 +156,6 @@ while running:
     rot[1,0] = np.sin(omega)
     rot[1,1] = np.cos(omega)
     dir = rot.dot(dir)
-    position.pose.pose.position.x = pos[0]
-    position.pose.pose.position.y = pos[1]
-    position.pose.pose.orientation.z = np.sin(np.arctan2(dir[1],dir[0])/2)
     # pygame.draw.circle(screen, (255,0,0), pos*PIXEL_SIZE, 20)
     # pygame.draw.line(screen, (0,0,255), pos*PIXEL_SIZE, (pos*PIXEL_SIZE + dir*20), 2)
 
@@ -223,6 +229,14 @@ while running:
                     vl = 0
                     
     #publish topics to ros master
+    scan_noise = abs(np.random.normal(1,SCAN_NOISE,360))
+    pose_noise = np.random.normal(0,POSE_NOISE,2)
+    scan_sensor.ranges *= scan_noise
+
+    position.pose.pose.position.x = pos[0] + pose_noise[0]
+    position.pose.pose.position.y = pos[1] + pose_noise[1]
+    position.pose.pose.orientation.z = np.sin((np.arctan2(dir[1],dir[0]) + np.pi*np.random.normal(0,ANG_NOISE,1))/2)
+
     pub_scan.publish(scan_sensor)
     pub_pose.publish(position)
 
