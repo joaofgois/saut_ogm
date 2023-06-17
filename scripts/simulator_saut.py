@@ -28,9 +28,9 @@ INIT_ANGLE = np.pi/2  # pi = np.pi
 # 68% of the observations lie within 1 standard deviation of the mean;
 # 95% lie within two standard deviation of the mean;
 # 99.9% lie within 3 standard deviations of the mean
-SCAN_NOISE = 0.05  # percentagem 
-POSE_NOISE = 0.05  # metros
-ANG_NOISE = 0.05 # percentagem
+SCAN_NOISE = 0.05  # std deviation (percentagem)
+POSE_NOISE = 0.05  # std deviation (metros)
+ANG_NOISE = 0.05 # std deviation (percentagem)
 
 #velocidades
 VEL_LIN = 0.3  # velocidade minima linear (metros/s)
