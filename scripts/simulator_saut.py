@@ -5,11 +5,12 @@ from PIL import Image  #para instalar correr: pip install Pillow
 import rospy
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import PoseWithCovarianceStamped
+import cv2
 
 
 #------------------ USER INPUT ----------------------------------------------------------------
-MAP_FILE = '/home/jgois/saut/src/test_pkg/scripts/image4.png'
-GRID_SIZE = 0.1 # gridsize do mapa de input (em metros)
+MAP_FILE = '/home/jgois/saut/src/test_pkg/scripts/image2.png'
+GRID_SIZE = 0.03 # gridsize do mapa de input (em metros)
 
 # DISPLAY SETTINGS
 SCREEN_WIDTH = 700 #pixels
@@ -20,17 +21,16 @@ FPS = 10
 DISPLAY_RAYS = True # mostrar raios do ray tracing
 
 #posicao inicial
-INITIAL_POSITION = [3, 5]  # x, y (em metros)
+INITIAL_POSITION = [1, 1.8]  # x, y (em metros)
 INIT_ANGLE = np.pi/2  # pi = np.pi
-
 
 #NOISE
 # 68% of the observations lie within 1 standard deviation of the mean;
 # 95% lie within two standard deviation of the mean;
 # 99.9% lie within 3 standard deviations of the mean
-SCAN_NOISE = 0.05  # std deviation (percentagem)
-POSE_NOISE = 0.05  # std deviation (metros)
-ANG_NOISE = 0.05 # std deviation (percentagem)
+SCAN_NOISE = 0.00  # std deviation (percentagem)
+POSE_NOISE = 0.00  # std deviation (metros)
+ANG_NOISE = 0.00 # std deviation (percentagem)
 
 #velocidades
 VEL_LIN = 0.3  # velocidade minima linear (metros/s)
@@ -49,16 +49,17 @@ NR_VEL_A = 3 # numero de velocidades para vel. angular (maior numero implica mai
 
 image = Image.open(MAP_FILE)
 # Convert the image to grayscale
+
 image = image.convert('L')
+out = image.transpose(Image.FLIP_TOP_BOTTOM)
 # Convert the image to a 2D NumPy array
-array = np.array(image)
+array = np.array(out)
 # Print the shape of the array
 print(array.shape)
 width = array.shape[1]
 height = array.shape[0]
 print(array)
 map = array
-
 
 
 # Define the dimensions of the array
@@ -110,6 +111,7 @@ pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 bg = pygame.image.load(MAP_FILE)
 bg = pygame.transform.scale(bg, (700, 700))
+bg = pygame.transform.flip(bg, False, True)
 
 # Game loop
 running = True

@@ -16,9 +16,9 @@ import numpy as np
 #tudo em METROS
 GRID_SIZE = 0.05
 WALL = 0.05
-MAP_SIZE = 15 #fica MAP_SIZExMAP_SIZE
-FREE_PROB = 0.1
-OCC_PROB = 0.9
+MAP_SIZE = 60 #fica MAP_SIZExMAP_SIZE
+FREE_PROB = 0.3
+OCC_PROB = 0.55
 
 #--------------------------------------------------------------------------------
 
