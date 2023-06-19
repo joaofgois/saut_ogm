@@ -17,9 +17,9 @@ import numpy as np
 # 68% of the observations lie within 1 standard deviation of the mean;
 # 95% lie within two standard deviation of the mean;
 # 99.9% lie within 3 standard deviations of the mean
-SCAN_NOISE = 0.05
-POSE_NOISE = 0.0
-ANG_NOISE = 0.0
+SCAN_NOISE = 0.0  # percentagem
+POSE_NOISE = 0.0  # metros
+ANG_NOISE = 0.0   # percentagem
 #--------------------------------------------------------------------------------
 
 # Import your custom code to implement your algorithm logic here
@@ -32,8 +32,8 @@ class Noiser_Node:
         self.node_frequency = None
         self.pub_scan = None
         self.pub_pose = None
-        self.scan_sensor = None
-        self.position = None
+        self.scan_sensor = LaserScan
+        self.position = PoseWithCovarianceStamped
         
         # Initialize the ROS node
         rospy.init_node('noiser_node')
@@ -77,8 +77,6 @@ class Noiser_Node:
         rospy.Subscriber('/poser', PoseWithCovarianceStamped, self.callback_pose)
 
     def callback_scan(self, msg):
-
-        # Store the sensor message to be processed later (or process now depending on the application)
         self.scan_sensor = msg
 
         scan_noise = abs(np.random.normal(1,SCAN_NOISE,360))
@@ -88,13 +86,16 @@ class Noiser_Node:
 
 
     def callback_pose(self,msg):         
+        self.position = msg
 
         pose_noise = np.random.normal(0,POSE_NOISE,2)
 
-        self.position.pose.pose.position.x = self.position.pose.pose.position.x + pose_noise[0]
-        self.position.pose.pose.position.y = self.position.pose.pose.position.y + pose_noise[1]
-        self.position.pose.pose.orientation.z = 2*np.arcsin(msg.pose.pose.orientation.z)
-        self.position.pose.pose.orientation.z = np.sin((np.arctan2(dir[1],dir[0]) + np.pi*np.random.normal(0,ANG_NOISE,1))/2)
+        self.position.pose.pose.position.x += pose_noise[0]
+        self.position.pose.pose.position.y += pose_noise[1]
+        ang = 2*np.arcsin(msg.pose.pose.orientation.z)
+        self.position.pose.pose.orientation.z = np.sin((ang + np.pi*np.random.normal(0,ANG_NOISE,1))/2)
+        rospy.loginfo('NOISED at: %s', rospy.get_time())
+
         self.pub_pose.publish(self.position)
 
 

@@ -16,7 +16,7 @@ import numpy as np
 #tudo em METROS
 GRID_SIZE = 0.05
 WALL = 0.05
-MAP_SIZE = 60 #fica MAP_SIZExMAP_SIZE
+MAP_SIZE = 40 #fica MAP_SIZExMAP_SIZE
 FREE_PROB = 0.3
 OCC_PROB = 0.55
 
@@ -100,8 +100,8 @@ class OGM_Node:
         self.h_timerActivate = True
 
     #def timer_callback(self, timer):
-    #   plt.imshow(1.0 - 1./(1.+np.exp(self.map.log_odds_map)), 'Greys') 
-    #    plt.pause(0.05)
+    #    plt.imshow(1.0 - 1./(1.+np.exp(self.map.log_odds_map)), 'Greys') 
+    #    plt.pause(0.0)
 
     def execute_OGM(self):
         """Here you should invoke methods to perform the logic computations of your algorithm.

@@ -9,8 +9,8 @@ import cv2
 
 
 #------------------ USER INPUT ----------------------------------------------------------------
-MAP_FILE = '/home/jgois/saut/src/test_pkg/scripts/image2.png'
-GRID_SIZE = 0.03 # gridsize do mapa de input (em metros)
+MAP_FILE = '/home/jgois/saut/src/test_pkg/scripts/image4.png'
+GRID_SIZE = 0.1 # gridsize do mapa de input (em metros)
 
 # DISPLAY SETTINGS
 SCREEN_WIDTH = 700 #pixels
@@ -21,7 +21,7 @@ FPS = 10
 DISPLAY_RAYS = True # mostrar raios do ray tracing
 
 #posicao inicial
-INITIAL_POSITION = [1, 1.8]  # x, y (em metros)
+INITIAL_POSITION = [3, 3]  # x, y (em metros)
 INIT_ANGLE = np.pi/2  # pi = np.pi
 
 #NOISE
@@ -88,8 +88,8 @@ delay = int(1/rate *1000)
 
 
 #SENSOR DATA
-pub_scan = rospy.Publisher('scan', LaserScan, queue_size=10)
-pub_pose = rospy.Publisher('amcl_pose', PoseWithCovarianceStamped, queue_size=10)
+pub_scan = rospy.Publisher('scanner', LaserScan, queue_size=10)
+pub_pose = rospy.Publisher('poser', PoseWithCovarianceStamped, queue_size=10)
 rospy.init_node('simulated_robot', anonymous=False)
 scan_sensor = LaserScan()
 scan_sensor.ranges = [0.0]*360
