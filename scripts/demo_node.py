@@ -11,6 +11,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 #teste
 
+
+#--------------------------------------------------------------------------------
+#tudo em METROS
+GRID_SIZE = 0.05
+WALL = 0.05
+MAP_SIZE = 40 #fica MAP_SIZExMAP_SIZE
+FREE_PROB = 0.3
+OCC_PROB = 0.55
+
+#--------------------------------------------------------------------------------
+
 # Import your custom code to implement your algorithm logic here
 # for example:
 
@@ -19,10 +30,10 @@ class Map:
         self.xsize = xsize
         self.ysize = ysize
         self.grid_size = grid_size
-        self.alpha_norm = grid_size/grid_size  #largura desejada / gridsize
+        self.alpha_norm = WALL/grid_size  #largura desejada / gridsize
         self.log_odds_map = np.zeros((self.xsize, self.ysize))
-        self.l_free = np.log(0.1/0.9)
-        self.l_occ = np.log(0.9/0.1)
+        self.l_free = np.log(FREE_PROB/(1-FREE_PROB))
+        self.l_occ = np.log(OCC_PROB/(1-OCC_PROB))
 
 
     def update_cell(self, x, y, value):
@@ -38,13 +49,14 @@ class OGM_Node:
         #initialize the map
         #each tile with 10cm
         #
-        grid_size = 0.5 
-        self.map = Map(int(70/grid_size), int(70/grid_size), grid_size)
+        grid_size = GRID_SIZE
+        self.map = Map(int(MAP_SIZE/grid_size), int(MAP_SIZE/grid_size), grid_size)
         
         # Store the data received from a scan sensor
         self.scan_sensor = LaserScan()
         self.scan_sensor.angle_increment = 2*np.pi/360
         self.scan_sensor.ranges = [0.0]*360
+        self.scan_sensor.range_min = 0.12
 
         self.pose = [0.0, 0.0, 0.0]
         
@@ -59,7 +71,7 @@ class OGM_Node:
         self.initialize_subscribers()
         
         # Initialize the timer with the corresponding interruption to work at a constant rate
-        self.initialize_timer()
+        #self.initialize_timer()
 
     def load_parameters(self):
         """
@@ -84,10 +96,14 @@ class OGM_Node:
         """
         Here we create a timer to trigger the callback function at a fixed rate.
         """
-        self.timer = rospy.Timer(rospy.Duration(1.0 / self.node_frequency), self.timer_callback)
+        self.timer = rospy.Timer(rospy.Duration(1), self.timer_callback)
         self.h_timerActivate = True
 
-    def timer_callback(self, timer):
+    #def timer_callback(self, timer):
+    #    plt.imshow(1.0 - 1./(1.+np.exp(self.map.log_odds_map)), 'Greys') 
+    #    plt.pause(0.0)
+
+    def execute_OGM(self):
         """Here you should invoke methods to perform the logic computations of your algorithm.
         Note, the timer object is not used here, but it is passed as an argument to the callback by default.
         This callback is called at a fixed rate as defined in the initialization of the timer.
@@ -157,7 +173,7 @@ class OGM_Node:
                 #InvSenModel(norm_dist, dist, xa_prev, ya_prev)
                 self.InvSenModel(dist_prev, dist, x_med, y_med, norm_dist)
                 
-                if (floor(xf) == floor(x_med) and floor(yf) == floor(y_med)) or dist_prev > 3.5:
+                if (floor(xf) == floor(x_med) and floor(yf) == floor(y_med)) or dist_prev > 3.5/self.map.grid_size:
                     tracing = False
 
     def InvSenModel(self, dist_prev, dist, x_med, y_med, norm_dist):
@@ -195,9 +211,11 @@ class OGM_Node:
         self.pose[2] = 2*np.arcsin(msg.pose.pose.orientation.z)
         #self.pose.pose.position.x/y/z
 
+        #-------------------------------
+        self.execute_OGM()
+
 
 def main():
-
     # Create an instance of the DemoNode class
     node = OGM_Node()
 
@@ -206,9 +224,11 @@ def main():
     rospy.spin()
 
     print(node.map.log_odds_map)
-    plt.clf()
-    plt.imshow(node.map.log_odds_map, 'Greys') # log probabilities
-    #plt.imshow(1.0 - 1./(1.+np.exp(node.map.log_odds_map)), 'Greys') #Probability
+    plt.figure('Log-Odds Map')
+    c = plt.imshow(node.map.log_odds_map, 'Greys') # log probabilities
+    plt.colorbar(c)
+    plt.figure('Probabilities Map')
+    plt.imshow(1.0 - 1./(1.+np.exp(node.map.log_odds_map)), 'Greys') #Probability
     plt.show()
 
 if __name__ == '__main__':

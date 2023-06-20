@@ -206,6 +206,6 @@ include_directories(
 # catkin_add_nosetests(test)
 
 
-catkin_install_python(PROGRAMS scripts/listener.py scripts/talker.py scripts/demo_node.py
+catkin_install_python(PROGRAMS scripts/listener.py scripts/talker.py scripts/demo_node.py scripts/simulator_saut.py scripts/noiser.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
