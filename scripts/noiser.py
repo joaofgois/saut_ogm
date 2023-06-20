@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 #teste
 
+#This node receives topic 'scanner' and 'poser' and adds noise to them
 
 #--------------------------------------------------------------------------------
 # NOISE
